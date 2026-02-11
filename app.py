@@ -17,7 +17,7 @@ import time
 import logging
 
 from config import EGX_TOP_COMPANIES, STRATEGY_CONFIG, SERVER_CONFIG, PLATFORM_RECOMMENDATION
-from data_fetcher import get_stock_data, get_multiple_stocks_data, get_real_time_price, get_all_prices, get_market_summary, bulk_update_prices, is_market_hours, INVESTING_SLUGS, GOOGLE_TICKERS
+from data_fetcher import get_stock_data, get_multiple_stocks_data, get_real_time_price, get_all_prices, get_market_summary, bulk_update_prices, is_market_hours, INVESTING_SLUGS, INVESTING_DOMAIN, get_investing_url
 from technical_analysis import generate_trading_signal, scan_all_stocks, get_buy_signals, get_sell_signals, SignalType
 from chart_generator import create_candlestick_chart
 from paper_trading import paper_trading
@@ -107,6 +107,27 @@ def get_sell_recommendations():
     sell_signals = get_sell_signals(scan_all_stocks(stocks_data))
     return jsonify({"status": "success", "signals": [signal_to_dict(s) for s in sell_signals], "total": len(sell_signals)})
 
+@app.route('/api/test-price/<ticker>')
+def test_price(ticker):
+    """Debug endpoint to test price fetching"""
+    ticker = ticker.upper()
+    if not ticker.endswith('.CA'): ticker += '.CA'
+    price_info = get_real_time_price(ticker)
+    if price_info:
+        return jsonify({
+            "status": "success",
+            "ticker": ticker,
+            "price": price_info.get('current_price'),
+            "source": price_info.get('source'),
+            "method": price_info.get('method', 'unknown'),
+            "change": price_info.get('change'),
+            "change_percent": price_info.get('change_percent'),
+            "data_time": price_info.get('data_time'),
+            "from_cache": price_info.get('from_cache', False),
+            "source_url": price_info.get('source_url'),
+        })
+    return jsonify({"status": "error", "message": f"Could not fetch price for {ticker}"}), 404
+
 @app.route('/api/chart/<ticker>')
 def get_chart(ticker):
     ticker = ticker.upper()
@@ -114,29 +135,12 @@ def get_chart(ticker):
     df = get_stock_data(ticker, period=request.args.get('period', '6mo'))
     if df is None: return jsonify({"status": "error"}), 404
     
-    # Get price info with source
+    # Get price from Investing.com
     price_info = get_real_time_price(ticker)
     company = EGX_TOP_COMPANIES.get(ticker, {})
     
-    # Build source URLs
-    source_urls = {}
-    slug = INVESTING_SLUGS.get(ticker)
-    if slug:
-        source_urls["Investing.com"] = f"https://www.investing.com/equities/{slug}"
-    symbol = ticker.replace('.CA', '')
-    source_urls["Google Finance"] = f"https://www.google.com/finance/quote/{symbol}:EGX"
-    source_urls["Yahoo Finance"] = f"https://finance.yahoo.com/quote/{ticker}/"
-    
-    # Determine which URL matches the source
-    source_name = price_info.get('source', 'N/A') if price_info else 'N/A'
-    source_url = ""
-    if "Investing" in source_name and "Investing.com" in source_urls:
-        source_url = source_urls["Investing.com"]
-    elif "Google" in source_name:
-        source_url = source_urls["Google Finance"]
-    elif "Yahoo" in source_name:
-        source_url = source_urls["Yahoo Finance"]
-    
+    # Investing.com URL
+    investing_url = get_investing_url(ticker)
     data_time = price_info.get('data_time', 'N/A') if price_info else 'N/A'
     
     stock_info = {
@@ -151,9 +155,9 @@ def get_chart(ticker):
         "high": price_info.get('high') if price_info else None,
         "low": price_info.get('low') if price_info else None,
         "volume": price_info.get('volume', 0) if price_info else 0,
-        "source": source_name,
-        "source_url": source_url,
-        "all_sources": source_urls,
+        "source": "Investing.com",
+        "source_url": investing_url,
+        "method": price_info.get('method', '') if price_info else '',
         "data_time": data_time + ' (توقيت مصر)' if data_time != 'N/A' else 'N/A',
         "timestamp": price_info.get('timestamp', '') if price_info else '',
         "market_open": is_market_hours(),

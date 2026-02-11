@@ -616,18 +616,15 @@
                 </div>
                 <div
                     style="display:flex; justify-content:space-between; align-items:center; margin-top:0.8rem; padding:8px 12px; background:rgba(0,212,255,0.06); border-radius:8px; border:1px solid rgba(0,212,255,0.15); flex-wrap:wrap; gap:0.5rem;">
-                    <div style="font-size:0.8rem; color:var(--accent);">
+                    <div style="font-size:0.85rem; color:var(--accent);">
                         📡 المصدر: <a id="si-source-link" href="#" target="_blank"
-                            style="color:var(--accent); text-decoration:underline; font-weight:700;"
-                            id="si-source">-</a>
+                            style="color:var(--accent); text-decoration:underline; font-weight:700;">Investing.com ↗</a>
                     </div>
                     <div style="font-size:0.8rem; color:var(--text2);">
                         🕐 <strong id="si-datatime">-</strong>
                     </div>
                     <div id="si-market-status" style="font-size:0.8rem; padding:3px 10px; border-radius:12px;">-</div>
                 </div>
-                <div id="si-all-sources"
-                    style="display:flex; gap:0.8rem; margin-top:0.6rem; flex-wrap:wrap; font-size:0.78rem;"></div>
             </div>
             <div id="chart-container" class="card">
                 <div class="empty">اختر سهم</div>
@@ -827,9 +824,9 @@
                     document.getElementById('si-volume').textContent = s.volume ? Number(s.volume).toLocaleString('ar-EG') : '-';
                     document.getElementById('si-sector').textContent = s.sector || '-';
 
-                    // Source with link
+                    // Source link
                     const srcLink = document.getElementById('si-source-link');
-                    srcLink.textContent = s.source || '-';
+                    srcLink.textContent = 'Investing.com (مباشر) ↗';
                     srcLink.href = s.source_url || '#';
 
                     document.getElementById('si-datatime').textContent = s.data_time || '-';
@@ -844,14 +841,6 @@
                         mktEl.textContent = '🔴 السوق مغلق';
                         mktEl.style.background = 'rgba(255,23,68,0.15)';
                         mktEl.style.color = 'var(--danger)';
-                    }
-
-                    // All source links
-                    const allSrc = document.getElementById('si-all-sources');
-                    if (s.all_sources) {
-                        allSrc.innerHTML = '🔗 المصادر: ' + Object.entries(s.all_sources).map(([name, url]) =>
-                            `<a href="${url}" target="_blank" style="color:var(--accent); text-decoration:underline; padding:2px 8px; background:rgba(0,212,255,0.08); border-radius:6px;">${name} ↗</a>`
-                        ).join('');
                     }
 
                     panel.style.display = 'block';

@@ -15,6 +15,10 @@ EGX_TOP_COMPANIES = {
     "EFIH.CA": {"name": "E-Finance", "sector": "FinTech", "arabic_name": "إي فاينانس"},
     "HRHO.CA": {"name": "EFG Holding", "sector": "Financial Services", "arabic_name": "إي إف جي القابضة"},
     "FWRY.CA": {"name": "Fawry", "sector": "FinTech", "arabic_name": "فوري"},
+    "QNBE.CA": {"name": "QNB Alahli", "sector": "Banking", "arabic_name": "بنك قطر الوطني الأهلي"},
+    "SAIB.CA": {"name": "Societe Arabe Internationale de Banque", "sector": "Banking", "arabic_name": "بنك الشركة العربية المصرفية"},
+    "VALU.CA": {"name": "ValU", "sector": "FinTech", "arabic_name": "ڤاليو"},
+    "CCAP.CA": {"name": "CI Capital Holding", "sector": "Financial Services", "arabic_name": "سي آي كابيتال القابضة"},
     
     # Real Estate & Construction
     "TMGH.CA": {"name": "Talaat Moustafa Group", "sector": "Real Estate", "arabic_name": "طلعت مصطفى القابضة"},
@@ -22,18 +26,26 @@ EGX_TOP_COMPANIES = {
     "EMFD.CA": {"name": "Emaar Misr", "sector": "Real Estate", "arabic_name": "إعمار مصر"},
     "OCDI.CA": {"name": "Orascom Development", "sector": "Real Estate", "arabic_name": "أوراسكوم للتنمية"},
     "HELI.CA": {"name": "Heliopolis Housing", "sector": "Real Estate", "arabic_name": "مصر الجديدة للإسكان"},
+    "ORHD.CA": {"name": "Ora Developers", "sector": "Real Estate", "arabic_name": "أورا ديفلوبرز"},
+    "MNHD.CA": {"name": "Madinet Nasr Housing", "sector": "Real Estate", "arabic_name": "مدينة نصر للإسكان"},
     
     # Industrial & Manufacturing
     "SWDY.CA": {"name": "Elsewedy Electric", "sector": "Industrial", "arabic_name": "السويدي إليكتريك"},
     "ORWE.CA": {"name": "Oriental Weavers", "sector": "Textiles", "arabic_name": "السجاد الشرقية"},
+    "IRON.CA": {"name": "Egyptian Iron & Steel", "sector": "Industrial", "arabic_name": "الحديد والصلب المصرية"},
+    "ACGC.CA": {"name": "Arab Cotton Ginning", "sector": "Industrial", "arabic_name": "العربية لحليج الأقطان"},
     
     # Food & Beverages
     "JUFO.CA": {"name": "Juhayna Food Industries", "sector": "Food & Beverages", "arabic_name": "جهينة للصناعات الغذائية"},
     "EAST.CA": {"name": "Eastern Company", "sector": "Tobacco", "arabic_name": "الشرقية للدخان"},
     "EFID.CA": {"name": "Edita Food Industries", "sector": "Food & Beverages", "arabic_name": "إيديتا للصناعات الغذائية"},
+    "DOMT.CA": {"name": "Domty", "sector": "Food & Beverages", "arabic_name": "دومتي"},
     
-    # Telecommunications
+    # Telecommunications & Technology
     "ETEL.CA": {"name": "Telecom Egypt", "sector": "Telecommunications", "arabic_name": "المصرية للاتصالات"},
+    "RAYA.CA": {"name": "Raya Holding", "sector": "Technology", "arabic_name": "راية القابضة"},
+    "ODIN.CA": {"name": "Odin Investments", "sector": "Technology", "arabic_name": "أودن للاستثمارات"},
+    "CIRA.CA": {"name": "Cairo Investment & Real Estate Dev", "sector": "Education", "arabic_name": "سيرا للتعليم"},
     
     # Petrochemicals & Chemicals
     "SKPC.CA": {"name": "Sidi Kerir Petrochemicals", "sector": "Petrochemicals", "arabic_name": "سيدي كرير للبتروكيماويات"},
@@ -46,6 +58,10 @@ EGX_TOP_COMPANIES = {
     # Building Materials
     "ARCC.CA": {"name": "Arabian Cement", "sector": "Cement", "arabic_name": "العربية للأسمنت"},
     "SVCE.CA": {"name": "South Valley Cement", "sector": "Cement", "arabic_name": "جنوب الوادى للأسمنت"},
+    
+    # Diversified
+    "TALM.CA": {"name": "Talaat Moustafa Group (TMG)", "sector": "Diversified", "arabic_name": "مجموعة طلعت مصطفى"},
+    "ORAS.CA": {"name": "Orascom Construction", "sector": "Construction", "arabic_name": "أوراسكوم كونستراكشن"},
 }
 
 # Trading Strategy Parameters
