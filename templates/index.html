@@ -789,7 +789,7 @@
         }
 
         async function doReset() {
-            if (!confirm('⚠️ سيتم حذف كل الصفقات! متأكد؟')) return;
+            if (!confirm('⚠️ سيتم حذف كل الصفقات وإيقاف التداول التلقائي! متأكد؟')) return;
             if (!confirm('تأكيد نهائي - حذف كل شيء؟')) return;
             try {
                 const res = await fetch('/api/trades/reset', {
@@ -799,8 +799,10 @@
                 });
                 const d = await res.json();
                 if (d.status === 'success') {
-                    addLog('info', '🗑️ تم إعادة تعيين المحفظة');
+                    addLog('info', '🗑️ ' + (d.message || 'تم إعادة التعيين'));
+                    settings.auto_trade_enabled = false;
                     loadAll();
+                    alert(d.message || 'تم إعادة التعيين');
                 } else {
                     alert('خطأ: ' + (d.message || 'فشل'));
                 }

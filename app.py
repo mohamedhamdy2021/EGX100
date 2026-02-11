@@ -174,9 +174,25 @@ def close_trade(ticker):
 @app.route('/api/trades/reset', methods=['POST'])
 def reset_portfolio():
     body = request.get_json(silent=True) or {}
+    
+    # Disable auto-trading to prevent immediately reopening trades
+    auto_settings['auto_trade_enabled'] = False
+    save_settings(auto_settings)
+    
+    # Clear trade data
     paper_trading.reset_portfolio(body.get('initial_capital', 100000))
+    
+    # Clear scan results cache
+    last_scan_results["signals"] = []
+    last_scan_results["timestamp"] = None
+    
     broadcast_update()
-    return jsonify({"status": "success", "message": "تم إعادة التعيين", "portfolio": paper_trading.get_portfolio_stats()})
+    logger.info("Portfolio reset! Auto-trading disabled.")
+    return jsonify({
+        "status": "success", 
+        "message": "تم إعادة التعيين - التداول التلقائي معطل. فعّله يدوياً لبدء صفقات جديدة.",
+        "portfolio": paper_trading.get_portfolio_stats()
+    })
 
 # ==================== Settings API ====================
 @app.route('/api/settings')
