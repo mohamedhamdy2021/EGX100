@@ -113,7 +113,45 @@ def get_chart(ticker):
     if not ticker.endswith('.CA'): ticker += '.CA'
     df = get_stock_data(ticker, period=request.args.get('period', '6mo'))
     if df is None: return jsonify({"status": "error"}), 404
-    return jsonify({"status": "success", "chart": json.loads(create_candlestick_chart(df, ticker, EGX_TOP_COMPANIES.get(ticker, {}).get("name", "")))})
+    
+    # Get price info with source
+    price_info = get_real_time_price(ticker)
+    company = EGX_TOP_COMPANIES.get(ticker, {})
+    
+    # Convert data_time to Egypt timezone display
+    egypt_time = None
+    if price_info and price_info.get('data_time'):
+        try:
+            from datetime import timezone, timedelta
+            dt = datetime.fromisoformat(str(price_info['data_time']).replace('Z', '+00:00').split('+')[0])
+            egypt_tz = timezone(timedelta(hours=2))
+            egypt_dt = dt.replace(tzinfo=timezone.utc).astimezone(egypt_tz) if dt.tzinfo is None else dt.astimezone(egypt_tz)
+            egypt_time = egypt_dt.strftime('%Y-%m-%d %H:%M:%S') + ' (توقيت مصر)'
+        except:
+            egypt_time = str(price_info.get('data_time', ''))
+    
+    stock_info = {
+        "ticker": ticker,
+        "name": company.get('name', ticker),
+        "arabic_name": company.get('arabic_name', ''),
+        "sector": company.get('sector', ''),
+        "current_price": price_info.get('current_price') if price_info else None,
+        "change": price_info.get('change', 0) if price_info else 0,
+        "change_percent": price_info.get('change_percent', 0) if price_info else 0,
+        "open": price_info.get('open') if price_info else None,
+        "high": price_info.get('high') if price_info else None,
+        "low": price_info.get('low') if price_info else None,
+        "volume": price_info.get('volume', 0) if price_info else 0,
+        "source": price_info.get('source', 'N/A') if price_info else 'N/A',
+        "data_time": egypt_time or 'N/A',
+        "timestamp": datetime.now().strftime('%Y-%m-%d %H:%M:%S') + ' (توقيت مصر)',
+    }
+    
+    return jsonify({
+        "status": "success", 
+        "chart": json.loads(create_candlestick_chart(df, ticker, company.get("name", ""))),
+        "stock_info": stock_info
+    })
 
 # ==================== Paper Trading API ====================
 @app.route('/api/trades')
@@ -300,20 +338,43 @@ def worker_auto_trade():
             
             logger.info(f"Found {len(buy_signals)} buy signals >= {min_conf}% confidence")
             
-            # Open trades for ALL qualifying signals (no limit on batch)
+            # Build cooldown set: tickers closed in last 24 hours
+            cooldown_hours = 24
+            cooldown_tickers = set()
+            now = datetime.now()
+            for trade in paper_trading.trades:
+                if trade.status != "مفتوحة" and trade.exit_time:
+                    try:
+                        closed_time = datetime.fromisoformat(trade.exit_time)
+                        hours_since = (now - closed_time).total_seconds() / 3600
+                        if hours_since < cooldown_hours:
+                            cooldown_tickers.add(trade.ticker)
+                    except:
+                        pass
+            
+            if cooldown_tickers:
+                logger.info(f"Cooldown tickers (closed <{cooldown_hours}h): {cooldown_tickers}")
+            
+            # Open trades for qualifying signals
             opened = 0
             skipped_existing = 0
+            skipped_cooldown = 0
             skipped_max = 0
             
             for signal in buy_signals:
                 # Check max trades limit
                 if len(paper_trading.open_trades) >= max_trades:
-                    skipped_max += len(buy_signals) - opened - skipped_existing
+                    skipped_max += len(buy_signals) - opened - skipped_existing - skipped_cooldown
                     break
                 
-                # Skip if already have this trade
+                # Skip if already have this trade open
                 if signal.ticker in paper_trading.open_trades:
                     skipped_existing += 1
+                    continue
+                
+                # Skip if ticker is in cooldown (recently closed)
+                if signal.ticker in cooldown_tickers:
+                    skipped_cooldown += 1
                     continue
                 
                 company_info = EGX_TOP_COMPANIES.get(signal.ticker, {})
@@ -335,7 +396,7 @@ def worker_auto_trade():
                     logger.info(f"  Opened: {signal.ticker} @ {signal.price} (conf: {signal.confidence}%)")
                     socketio.emit('new_trade', {'trade': asdict(trade)})
             
-            logger.info(f"Auto-trade result: opened={opened}, skipped_existing={skipped_existing}, skipped_max={skipped_max}")
+            logger.info(f"Auto-trade result: opened={opened}, skipped_existing={skipped_existing}, skipped_cooldown={skipped_cooldown}, skipped_max={skipped_max}")
             
             if opened > 0:
                 broadcast_update()

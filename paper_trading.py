@@ -284,18 +284,23 @@ class PaperTradingSystem:
     
     def reset_portfolio(self, initial_capital: float = 100000):
         """Reset portfolio and clear all trades"""
-        self.initial_capital = initial_capital
-        self.current_capital = initial_capital
-        self.trades = []
-        self.open_trades = {}
-        
-        # Delete files
-        if os.path.exists(TRADES_FILE):
-            os.remove(TRADES_FILE)
-        if os.path.exists(PORTFOLIO_FILE):
-            os.remove(PORTFOLIO_FILE)
-        
-        self._save_data()
+        with self._lock:
+            self.initial_capital = initial_capital
+            self.current_capital = initial_capital
+            self.trades.clear()
+            self.open_trades.clear()
+            
+            # Write empty data to files immediately (inside lock)
+            portfolio_data = {
+                'initial_capital': self.initial_capital,
+                'current_capital': self.current_capital,
+                'last_updated': datetime.now().isoformat()
+            }
+            with open(PORTFOLIO_FILE, 'w', encoding='utf-8') as f:
+                json.dump(portfolio_data, f, ensure_ascii=False, indent=2)
+            
+            with open(TRADES_FILE, 'w', encoding='utf-8') as f:
+                json.dump([], f)
 
 
 # Global instance

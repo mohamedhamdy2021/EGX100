@@ -593,6 +593,40 @@
             <select id="stock-select" onchange="loadChart()">
                 <option value="">اختر سهم للتحليل...</option>
             </select>
+            <!-- Stock Info Panel -->
+            <div id="stock-info-panel" class="card" style="display:none; margin-bottom:1rem;">
+                <div
+                    style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:1rem;">
+                    <div>
+                        <div style="font-size:1.3rem; font-weight:900;" id="si-name">-</div>
+                        <div style="color:var(--text2); font-size:0.85rem;" id="si-ticker">-</div>
+                    </div>
+                    <div style="text-align:left;">
+                        <div style="font-size:1.8rem; font-weight:900;" id="si-price">-</div>
+                        <div id="si-change" style="font-size:0.95rem; font-weight:700;">-</div>
+                    </div>
+                </div>
+                <div
+                    style="display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); gap:8px; margin-top:1rem;">
+                    <div class="info-item"><span class="lbl">الافتتاح</span><span id="si-open">-</span></div>
+                    <div class="info-item"><span class="lbl">أعلى</span><span id="si-high">-</span></div>
+                    <div class="info-item"><span class="lbl">أدنى</span><span id="si-low">-</span></div>
+                    <div class="info-item"><span class="lbl">الحجم</span><span id="si-volume">-</span></div>
+                    <div class="info-item"><span class="lbl">القطاع</span><span id="si-sector">-</span></div>
+                </div>
+                <div
+                    style="display:flex; justify-content:space-between; align-items:center; margin-top:0.8rem; padding:8px 12px; background:rgba(0,212,255,0.06); border-radius:8px; border:1px solid rgba(0,212,255,0.15); flex-wrap:wrap; gap:0.5rem;">
+                    <div style="font-size:0.8rem; color:var(--accent);">
+                        📡 المصدر: <strong id="si-source">-</strong>
+                    </div>
+                    <div style="font-size:0.8rem; color:var(--text2);">
+                        🕐 تاريخ البيانات: <strong id="si-datatime">-</strong>
+                    </div>
+                    <div style="font-size:0.75rem; color:var(--text2);">
+                        آخر تحديث: <span id="si-timestamp">-</span>
+                    </div>
+                </div>
+            </div>
             <div id="chart-container" class="card">
                 <div class="empty">اختر سهم</div>
             </div>
@@ -761,11 +795,41 @@
 
         async function loadChart() {
             const ticker = document.getElementById('stock-select').value;
-            if (!ticker) return;
+            const panel = document.getElementById('stock-info-panel');
+            if (!ticker) { panel.style.display = 'none'; return; }
             document.getElementById('chart-container').innerHTML = '<div class="empty">⏳ جاري التحميل...</div>';
+            panel.style.display = 'none';
             try {
                 const d = await (await fetch('/api/chart/' + ticker)).json();
                 if (d.chart) Plotly.newPlot('chart-container', d.chart.data, d.chart.layout, { responsive: true });
+
+                // Show stock info panel
+                if (d.stock_info) {
+                    const s = d.stock_info;
+                    document.getElementById('si-name').textContent = s.arabic_name || s.name || ticker;
+                    document.getElementById('si-ticker').textContent = s.ticker + (s.sector ? ' · ' + s.sector : '');
+                    document.getElementById('si-price').textContent = s.current_price ? s.current_price.toLocaleString('ar-EG') + ' ج.م' : '-';
+
+                    const changeEl = document.getElementById('si-change');
+                    if (s.change !== null && s.change !== undefined) {
+                        const sign = s.change >= 0 ? '+' : '';
+                        changeEl.textContent = sign + s.change + ' (' + sign + s.change_percent + '%)';
+                        changeEl.style.color = s.change >= 0 ? 'var(--success)' : 'var(--danger)';
+                    } else {
+                        changeEl.textContent = '-';
+                    }
+
+                    document.getElementById('si-open').textContent = s.open || '-';
+                    document.getElementById('si-high').textContent = s.high || '-';
+                    document.getElementById('si-low').textContent = s.low || '-';
+                    document.getElementById('si-volume').textContent = s.volume ? Number(s.volume).toLocaleString('ar-EG') : '-';
+                    document.getElementById('si-sector').textContent = s.sector || '-';
+                    document.getElementById('si-source').textContent = s.source || '-';
+                    document.getElementById('si-datatime').textContent = s.data_time || '-';
+                    document.getElementById('si-timestamp').textContent = s.timestamp || '-';
+
+                    panel.style.display = 'block';
+                }
             } catch (e) { document.getElementById('chart-container').innerHTML = '<div class="empty">خطأ في التحميل</div>'; }
         }
 
