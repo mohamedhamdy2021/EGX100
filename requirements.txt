@@ -1,0 +1,29 @@
+# Egyptian Stock Exchange Trading Bot Dependencies
+# Data & Analysis
+yfinance>=0.2.36
+pandas>=2.0.0
+numpy>=1.24.0
+ta>=0.11.0
+
+# Web Server
+flask>=3.0.0
+flask-cors>=4.0.0
+flask-socketio>=5.3.0
+python-socketio>=5.10.0
+eventlet>=0.35.0
+
+# Visualization
+plotly>=5.18.0
+mplfinance>=0.12.10b0
+
+# Additional utilities
+requests>=2.31.0
+python-dateutil>=2.8.2
+pytz>=2024.1
+cachetools>=5.3.0
+
+# API alternatives (if Yahoo Finance limits)
+twelvedata>=1.2.15
+
+# Production server
+gunicorn>=21.0.0

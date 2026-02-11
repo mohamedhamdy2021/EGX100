@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EGX Auto Trading Bot</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.socket.io/4.6.0/socket.io.min.js"></script>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        :root {
+            --bg: #0a0a1a;
+            --card: #131336;
+            --card2: #1a1a4e;
+            --accent: #00d4ff;
+            --success: #00e676;
+            --danger: #ff1744;
+            --warn: #ffc107;
+            --text: #eee;
+            --text2: #8892b0;
+            --glass: rgba(19, 19, 54, 0.85)
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box
+        }
+
+        body {
+            font-family: 'Cairo', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(ellipse at 20% 50%, rgba(0, 212, 255, 0.05), transparent 70%), radial-gradient(ellipse at 80% 50%, rgba(123, 44, 191, 0.05), transparent 70%);
+            pointer-events: none;
+            z-index: 0
+        }
+
+        .header {
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            padding: 1rem 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            border-bottom: 1px solid rgba(0, 212, 255, 0.15);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 1rem
+        }
+
+        .logo-icon {
+            width: 52px;
+            height: 52px;
+            background: linear-gradient(135deg, #00d4ff, #7b2cbf);
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.6rem;
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.3)
+        }
+
+        .logo h1 {
+            font-size: 1.4rem;
+            background: linear-gradient(135deg, #00d4ff, #a855f7);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent
+        }
+
+        .header-info {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            flex-wrap: wrap
+        }
+
+        .live-badge {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            background: rgba(0, 230, 118, 0.1);
+            border: 1px solid rgba(0, 230, 118, 0.3);
+            border-radius: 20px;
+            font-size: 0.85rem
+        }
+
+        .live-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--success);
+            border-radius: 50%;
+            animation: pulse 1.5s infinite
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                box-shadow: 0 0 0 0 rgba(0, 230, 118, 0.5)
+            }
+
+            50% {
+                box-shadow: 0 0 0 6px transparent
+            }
+        }
+
+        .main {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 1.5rem;
+            position: relative;
+            z-index: 1
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem
+        }
+
+        .stat-card {
+            background: var(--card);
+            border-radius: 16px;
+            padding: 1.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            position: relative;
+            overflow: hidden
+        }
+
+        .stat-card::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 4px;
+            height: 100%;
+            border-radius: 0 16px 16px 0
+        }
+
+        .stat-card.blue::after {
+            background: var(--accent)
+        }
+
+        .stat-card.green::after {
+            background: var(--success)
+        }
+
+        .stat-card.red::after {
+            background: var(--danger)
+        }
+
+        .stat-card.yellow::after {
+            background: var(--warn)
+        }
+
+        .stat-val {
+            font-size: 1.8rem;
+            font-weight: 900;
+            line-height: 1.2
+        }
+
+        .stat-label {
+            color: var(--text2);
+            font-size: 0.85rem;
+            margin-top: 4px
+        }
+
+        .positive {
+            color: var(--success)
+        }
+
+        .negative {
+            color: var(--danger)
+        }
+
+        .section {
+            margin-bottom: 2.5rem
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+            gap: 0.5rem
+        }
+
+        .section-header h2 {
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 1rem
+        }
+
+        .card {
+            background: var(--card);
+            border-radius: 14px;
+            padding: 1.25rem;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            transition: transform 0.2s
+        }
+
+        .card:hover {
+            transform: translateY(-2px)
+        }
+
+        .trade-card {
+            border-right: 4px solid var(--success)
+        }
+
+        .trade-card.loss {
+            border-right-color: var(--danger)
+        }
+
+        .trade-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 0.75rem
+        }
+
+        .ticker {
+            font-size: 1.15rem;
+            font-weight: 700
+        }
+
+        .ticker-sub {
+            font-size: 0.8rem;
+            color: var(--text2)
+        }
+
+        .badge {
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600
+        }
+
+        .badge.open {
+            background: rgba(0, 212, 255, 0.15);
+            color: var(--accent)
+        }
+
+        .badge.profit {
+            background: rgba(0, 230, 118, 0.15);
+            color: var(--success)
+        }
+
+        .badge.loss {
+            background: rgba(255, 23, 68, 0.15);
+            color: var(--danger)
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+            font-size: 0.85rem
+        }
+
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 10px;
+            background: rgba(0, 0, 0, 0.25);
+            border-radius: 8px
+        }
+
+        .info-item .label {
+            color: var(--text2)
+        }
+
+        .pnl-box {
+            text-align: center;
+            margin-top: 0.75rem;
+            padding: 0.75rem;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 1.3rem
+        }
+
+        .pnl-box.positive {
+            background: rgba(0, 230, 118, 0.1);
+            color: var(--success)
+        }
+
+        .pnl-box.negative {
+            background: rgba(255, 23, 68, 0.1);
+            color: var(--danger)
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-family: inherit;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            font-size: 0.85rem;
+            transition: all 0.2s
+        }
+
+        .btn:hover {
+            opacity: 0.9;
+            transform: translateY(-1px)
+        }
+
+        .btn-close {
+            background: var(--danger);
+            color: white;
+            width: 100%;
+            margin-top: 0.75rem
+        }
+
+        .settings-panel {
+            background: var(--card);
+            border: 1px solid rgba(0, 212, 255, 0.15);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 2rem
+        }
+
+        .settings-panel h3 {
+            color: var(--accent);
+            margin-bottom: 1.25rem;
+            font-size: 1.1rem
+        }
+
+        .setting-row {
+            margin-bottom: 1.25rem
+        }
+
+        .setting-row label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 6px;
+            font-size: 0.9rem
+        }
+
+        .setting-row input[type="range"] {
+            width: 100%;
+            accent-color: var(--accent);
+            height: 6px
+        }
+
+        .setting-row input[type="number"] {
+            width: 100%;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            color: white;
+            font-family: inherit;
+            font-size: 0.95rem
+        }
+
+        .toggle-row {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 12px;
+            margin-bottom: 1rem
+        }
+
+        .toggle {
+            width: 52px;
+            height: 28px;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 14px;
+            position: relative;
+            cursor: pointer;
+            transition: background 0.3s;
+            flex-shrink: 0
+        }
+
+        .toggle.on {
+            background: var(--success)
+        }
+
+        .toggle::after {
+            content: '';
+            position: absolute;
+            width: 24px;
+            height: 24px;
+            background: white;
+            border-radius: 50%;
+            top: 2px;
+            left: 2px;
+            transition: left 0.3s
+        }
+
+        .toggle.on::after {
+            left: 26px
+        }
+
+        .btn-save {
+            background: linear-gradient(135deg, #00d4ff, #7b2cbf);
+            color: white;
+            width: 100%;
+            padding: 12px
+        }
+
+        .btn-reset {
+            background: rgba(255, 23, 68, 0.15);
+            color: var(--danger);
+            border: 1px solid rgba(255, 23, 68, 0.3);
+            width: 100%;
+            padding: 12px;
+            margin-top: 1rem
+        }
+
+        select {
+            width: 100%;
+            padding: 10px;
+            background: var(--card);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            color: white;
+            font-family: inherit;
+            margin-bottom: 1rem
+        }
+
+        .empty {
+            text-align: center;
+            padding: 2.5rem;
+            color: var(--text2);
+            font-size: 0.95rem
+        }
+
+        .log-line {
+            font-size: 0.8rem;
+            color: var(--text2);
+            padding: 4px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03)
+        }
+
+        .log-line.trade {
+            color: var(--success)
+        }
+
+        .log-line.close {
+            color: var(--danger)
+        }
+
+        .log-line.info {
+            color: var(--accent)
+        }
+
+        #activity-log {
+            max-height: 300px;
+            overflow-y: auto;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            padding: 10px;
+            font-family: monospace
+        }
+
+        #chart-container {
+            min-height: 400px
+        }
+
+        .last-update {
+            color: var(--text2);
+            font-size: 0.8rem
+        }
+    </style>
+</head>
+
+<body>
+    <header class="header">
+        <div class="logo">
+            <div class="logo-icon">🤖</div>
+            <div>
+                <h1>EGX Auto Trading</h1><small style="color:var(--text2)">تداول افتراضي تلقائي</small>
+            </div>
+        </div>
+        <div class="header-info">
+            <div class="live-badge">
+                <div class="live-dot"></div><span id="conn">متصل</span>
+            </div>
+            <span class="last-update" id="last-update">-</span>
+        </div>
+    </header>
+
+    <main class="main">
+        <!-- Stats -->
+        <div class="stats">
+            <div class="stat-card blue">
+                <div class="stat-val" id="equity">-</div>
+                <div class="stat-label">إجمالي الأصول (ج.م)</div>
+            </div>
+            <div class="stat-card green">
+                <div class="stat-val" id="pnl">-</div>
+                <div class="stat-label">إجمالي الأرباح</div>
+            </div>
+            <div class="stat-card yellow">
+                <div class="stat-val" id="winrate">-</div>
+                <div class="stat-label">نسبة النجاح</div>
+            </div>
+            <div class="stat-card red">
+                <div class="stat-val" id="open-n">-</div>
+                <div class="stat-label">صفقات مفتوحة / مغلقة</div>
+            </div>
+        </div>
+
+        <!-- Settings -->
+        <div class="settings-panel">
+            <h3>⚙️ إعدادات التداول التلقائي</h3>
+            <div class="toggle-row">
+                <div class="toggle on" id="auto-toggle" onclick="toggleAuto()"></div>
+                <div><strong id="auto-label">التداول التلقائي مفعل</strong><br><small style="color:var(--text2)">يفتح
+                        صفقات تلقائياً حسب الإعدادات</small></div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem">
+                <div class="setting-row">
+                    <label><span>الحد الأدنى لقوة الإشارة</span><span id="conf-v">65%</span></label>
+                    <input type="range" id="conf-r" min="50" max="90" value="65" step="5"
+                        oninput="document.getElementById('conf-v').textContent=this.value+'%'">
+                </div>
+                <div class="setting-row">
+                    <label><span>أقصى عدد صفقات</span><span id="max-v">100</span></label>
+                    <input type="range" id="max-r" min="5" max="100" value="100" step="5"
+                        oninput="document.getElementById('max-v').textContent=this.value">
+                </div>
+                <div class="setting-row">
+                    <label>مبلغ كل صفقة (ج.م)</label>
+                    <input type="number" id="amt-i" value="1000" min="100" step="100">
+                </div>
+            </div>
+            <button class="btn btn-save" onclick="saveSettings()">💾 حفظ الإعدادات</button>
+        </div>
+
+        <!-- Open Trades -->
+        <div class="section">
+            <div class="section-header">
+                <h2>📊 الصفقات المفتوحة (<span id="open-count">0</span>)</h2>
+                <span class="last-update" id="trades-time">-</span>
+            </div>
+            <div id="trades-grid" class="grid">
+                <div class="empty">⏳ في انتظار أول مسح للإشارات...</div>
+            </div>
+        </div>
+
+        <!-- Activity Log -->
+        <div class="section">
+            <div class="section-header">
+                <h2>📝 سجل النشاط</h2>
+            </div>
+            <div id="activity-log">
+                <div class="log-line info">🚀 جاري بدء التشغيل...</div>
+            </div>
+        </div>
+
+        <!-- Chart -->
+        <div class="section">
+            <div class="section-header">
+                <h2>📈 تحليل سهم</h2>
+            </div>
+            <select id="stock-select" onchange="loadChart()">
+                <option value="">اختر سهم للتحليل...</option>
+            </select>
+            <div id="chart-container" class="card">
+                <div class="empty">اختر سهم من القائمة</div>
+            </div>
+        </div>
+
+        <!-- Closed Trades -->
+        <div class="section">
+            <div class="section-header">
+                <h2>📜 الصفقات المغلقة</h2>
+            </div>
+            <div id="closed-grid" class="grid">
+                <div class="empty">لا توجد صفقات مغلقة</div>
+            </div>
+        </div>
+
+        <!-- Reset -->
+        <div class="section" style="max-width:400px">
+            <button class="btn btn-reset" onclick="resetPortfolio()">⚠️ إعادة تعيين المحفظة وحذف كل الصفقات</button>
+        </div>
+    </main>
+
+    <script>
+        const socket = io();
+        let settings = {};
+
+        // === Socket Events ===
+        socket.on('connect', () => {
+            setConn(true);
+            addLog('info', '✅ تم الاتصال بالسيرفر');
+            loadAll();
+        });
+        socket.on('disconnect', () => { setConn(false); addLog('info', '❌ انقطع الاتصال'); });
+
+        socket.on('trades_update', data => {
+            renderTrades(data.trades);
+            renderPortfolio(data.portfolio);
+            setTime();
+        });
+
+        socket.on('new_trade', data => {
+            const t = data.trade;
+            addLog('trade', `🟢 صفقة جديدة: ${t.arabic_name || t.ticker} @ ${t.entry_price} (${t.signal_confidence}%)`);
+            loadAll();
+        });
+
+        function setConn(ok) {
+            document.getElementById('conn').textContent = ok ? 'متصل' : 'غير متصل';
+            document.querySelector('.live-dot').style.background = ok ? 'var(--success)' : 'var(--danger)';
+        }
+        function setTime() {
+            const now = new Date().toLocaleTimeString('ar-EG');
+            document.getElementById('last-update').textContent = 'آخر تحديث: ' + now;
+            document.getElementById('trades-time').textContent = now;
+        }
+        function addLog(type, msg) {
+            const log = document.getElementById('activity-log');
+            const line = document.createElement('div');
+            line.className = 'log-line ' + type;
+            line.textContent = new Date().toLocaleTimeString('ar-EG') + ' — ' + msg;
+            log.insertBefore(line, log.firstChild);
+            if (log.children.length > 100) log.removeChild(log.lastChild);
+        }
+
+        // === Data Loading ===
+        async function loadAll() {
+            loadSettings();
+            loadPortfolio();
+            loadTrades();
+            loadClosed();
+            loadCompanies();
+        }
+
+        async function loadSettings() {
+            try {
+                const d = (await (await fetch('/api/settings')).json()).settings;
+                settings = d;
+                document.getElementById('conf-r').value = d.min_confidence;
+                document.getElementById('conf-v').textContent = d.min_confidence + '%';
+                document.getElementById('max-r').value = d.max_open_trades;
+                document.getElementById('max-v').textContent = d.max_open_trades;
+                document.getElementById('amt-i').value = d.trade_amount;
+                const tog = document.getElementById('auto-toggle');
+                tog.classList.toggle('on', d.auto_trade_enabled);
+                document.getElementById('auto-label').textContent = d.auto_trade_enabled ? 'التداول التلقائي مفعل' : 'التداول التلقائي معطل';
+            } catch (e) { }
+        }
+
+        async function loadPortfolio() {
+            try {
+                const d = (await (await fetch('/api/trades/portfolio')).json()).portfolio;
+                renderPortfolio(d);
+            } catch (e) { }
+        }
+
+        function renderPortfolio(p) {
+            document.getElementById('equity').textContent = p.total_equity.toLocaleString('ar-EG');
+            const pnlEl = document.getElementById('pnl');
+            pnlEl.textContent = (p.total_pnl >= 0 ? '+' : '') + p.total_pnl.toLocaleString('ar-EG');
+            pnlEl.className = 'stat-val ' + (p.total_pnl >= 0 ? 'positive' : 'negative');
+            document.getElementById('winrate').textContent = p.win_rate + '%';
+            document.getElementById('open-n').textContent = p.open_trades + ' / ' + p.closed_trades;
+        }
+
+        async function loadTrades() {
+            try {
+                const d = (await (await fetch('/api/trades/open')).json());
+                renderTrades(d.trades);
+            } catch (e) { }
+        }
+
+        function renderTrades(trades) {
+            const el = document.getElementById('trades-grid');
+            document.getElementById('open-count').textContent = trades.length;
+            if (!trades.length) { el.innerHTML = '<div class="empty">لا توجد صفقات مفتوحة — البوت يبحث كل 5 دقائق</div>'; return; }
+            el.innerHTML = trades.map(t => `
+            <div class="card trade-card ${t.pnl < 0 ? 'loss' : ''}">
+                <div class="trade-header">
+                    <div><div class="ticker">${t.arabic_name || t.ticker.replace('.CA', '')}</div><div class="ticker-sub">${t.ticker} · ${t.signal_confidence}%</div></div>
+                    <span class="badge open">مفتوحة</span>
+                </div>
+                <div class="info-grid">
+                    <div class="info-item"><span class="label">الدخول</span><span>${t.entry_price}</span></div>
+                    <div class="info-item"><span class="label">الحالي</span><span style="font-weight:700">${t.current_price}</span></div>
+                    <div class="info-item"><span class="label">وقف الخسارة</span><span class="negative">${t.stop_loss}</span></div>
+                    <div class="info-item"><span class="label">جني الأرباح</span><span class="positive">${t.take_profit}</span></div>
+                    <div class="info-item"><span class="label">الكمية</span><span>${t.quantity}</span></div>
+                    <div class="info-item"><span class="label">المبلغ</span><span>${t.investment_amount} ج.م</span></div>
+                </div>
+                <div class="pnl-box ${t.pnl >= 0 ? 'positive' : 'negative'}">${t.pnl >= 0 ? '+' : ''}${t.pnl.toFixed(2)} ج.م (${t.pnl_percent}%)</div>
+                <button class="btn btn-close" onclick="closeTrade('${t.ticker}')">إغلاق يدوي</button>
+            </div>
+        `).join('');
+            setTime();
+        }
+
+        async function loadClosed() {
+            try {
+                const d = (await (await fetch('/api/trades?type=closed')).json());
+                const el = document.getElementById('closed-grid');
+                if (!d.trades.length) { el.innerHTML = '<div class="empty">لا توجد صفقات مغلقة بعد</div>'; return; }
+                el.innerHTML = d.trades.slice().reverse().slice(0, 30).map(t => `
+                <div class="card trade-card ${t.pnl < 0 ? 'loss' : ''}">
+                    <div class="trade-header">
+                        <div><div class="ticker">${t.arabic_name || t.ticker.replace('.CA', '')}</div><div class="ticker-sub">${t.ticker}</div></div>
+                        <span class="badge ${t.pnl >= 0 ? 'profit' : 'loss'}">${t.status}</span>
+                    </div>
+                    <div class="info-grid">
+                        <div class="info-item"><span class="label">الدخول</span><span>${t.entry_price}</span></div>
+                        <div class="info-item"><span class="label">الخروج</span><span>${t.exit_price}</span></div>
+                    </div>
+                    <div class="pnl-box ${t.pnl >= 0 ? 'positive' : 'negative'}">${t.pnl >= 0 ? '+' : ''}${t.pnl.toFixed(2)} ج.م</div>
+                </div>
+            `).join('');
+            } catch (e) { }
+        }
+
+        async function loadCompanies() {
+            try {
+                const d = (await (await fetch('/api/companies')).json());
+                const sel = document.getElementById('stock-select');
+                if (sel.children.length <= 1) {
+                    sel.innerHTML = '<option value="">اختر سهم...</option>' + d.companies.map(c =>
+                        `<option value="${c.ticker}">${c.arabic_name} (${c.ticker.replace('.CA', '')})</option>`
+                    ).join('');
+                }
+            } catch (e) { }
+        }
+
+        async function loadChart() {
+            const ticker = document.getElementById('stock-select').value;
+            if (!ticker) return;
+            document.getElementById('chart-container').innerHTML = '<div class="empty">⏳ جاري التحميل...</div>';
+            try {
+                const d = (await (await fetch('/api/chart/' + ticker)).json());
+                if (d.chart) Plotly.newPlot('chart-container', d.chart.data, d.chart.layout, { responsive: true });
+            } catch (e) { document.getElementById('chart-container').innerHTML = '<div class="empty">خطأ</div>'; }
+        }
+
+        async function closeTrade(ticker) {
+            if (!confirm('إغلاق الصفقة؟')) return;
+            const d = await (await fetch('/api/trades/close/' + ticker, { method: 'POST' })).json();
+            if (d.trade) addLog('close', `🔴 تم إغلاق: ${ticker} | PnL: ${d.trade.pnl}`);
+            loadAll();
+        }
+
+        function toggleAuto() {
+            settings.auto_trade_enabled = !settings.auto_trade_enabled;
+            saveSettings();
+        }
+
+        async function saveSettings() {
+            const body = {
+                min_confidence: parseInt(document.getElementById('conf-r').value),
+                max_open_trades: parseInt(document.getElementById('max-r').value),
+                trade_amount: parseInt(document.getElementById('amt-i').value) || 1000,
+                auto_trade_enabled: settings.auto_trade_enabled ?? true
+            };
+            const d = await (await fetch('/api/settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })).json();
+            settings = d.settings;
+            loadSettings();
+            addLog('info', `⚙️ الإعدادات: قوة>=${d.settings.min_confidence}% | أقصى=${d.settings.max_open_trades} | مبلغ=${d.settings.trade_amount}`);
+        }
+
+        async function resetPortfolio() {
+            if (!confirm('⚠️ سيتم حذف كل الصفقات! متأكد؟')) return;
+            if (!confirm('تأكيد نهائي - حذف كل شيء؟')) return;
+            await fetch('/api/trades/reset', { method: 'POST' });
+            addLog('info', '🗑️ تم إعادة تعيين المحفظة');
+            loadAll();
+        }
+
+        // Auto-refresh every 15 seconds via WebSocket
+        setInterval(() => { socket.emit('get_update'); }, 15000);
+        // Full reload every 2 minutes
+        setInterval(loadAll, 120000);
+
+        // Request notification permission
+        if ('Notification' in window) Notification.requestPermission();
+    </script>
+</body>
+
+</html>
