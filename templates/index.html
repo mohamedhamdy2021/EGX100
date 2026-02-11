@@ -617,15 +617,17 @@
                 <div
                     style="display:flex; justify-content:space-between; align-items:center; margin-top:0.8rem; padding:8px 12px; background:rgba(0,212,255,0.06); border-radius:8px; border:1px solid rgba(0,212,255,0.15); flex-wrap:wrap; gap:0.5rem;">
                     <div style="font-size:0.8rem; color:var(--accent);">
-                        📡 المصدر: <strong id="si-source">-</strong>
+                        📡 المصدر: <a id="si-source-link" href="#" target="_blank"
+                            style="color:var(--accent); text-decoration:underline; font-weight:700;"
+                            id="si-source">-</a>
                     </div>
                     <div style="font-size:0.8rem; color:var(--text2);">
-                        🕐 تاريخ البيانات: <strong id="si-datatime">-</strong>
+                        🕐 <strong id="si-datatime">-</strong>
                     </div>
-                    <div style="font-size:0.75rem; color:var(--text2);">
-                        آخر تحديث: <span id="si-timestamp">-</span>
-                    </div>
+                    <div id="si-market-status" style="font-size:0.8rem; padding:3px 10px; border-radius:12px;">-</div>
                 </div>
+                <div id="si-all-sources"
+                    style="display:flex; gap:0.8rem; margin-top:0.6rem; flex-wrap:wrap; font-size:0.78rem;"></div>
             </div>
             <div id="chart-container" class="card">
                 <div class="empty">اختر سهم</div>
@@ -824,9 +826,33 @@
                     document.getElementById('si-low').textContent = s.low || '-';
                     document.getElementById('si-volume').textContent = s.volume ? Number(s.volume).toLocaleString('ar-EG') : '-';
                     document.getElementById('si-sector').textContent = s.sector || '-';
-                    document.getElementById('si-source').textContent = s.source || '-';
+
+                    // Source with link
+                    const srcLink = document.getElementById('si-source-link');
+                    srcLink.textContent = s.source || '-';
+                    srcLink.href = s.source_url || '#';
+
                     document.getElementById('si-datatime').textContent = s.data_time || '-';
-                    document.getElementById('si-timestamp').textContent = s.timestamp || '-';
+
+                    // Market status
+                    const mktEl = document.getElementById('si-market-status');
+                    if (s.market_open) {
+                        mktEl.textContent = '🟢 السوق مفتوح';
+                        mktEl.style.background = 'rgba(0,230,118,0.15)';
+                        mktEl.style.color = 'var(--success)';
+                    } else {
+                        mktEl.textContent = '🔴 السوق مغلق';
+                        mktEl.style.background = 'rgba(255,23,68,0.15)';
+                        mktEl.style.color = 'var(--danger)';
+                    }
+
+                    // All source links
+                    const allSrc = document.getElementById('si-all-sources');
+                    if (s.all_sources) {
+                        allSrc.innerHTML = '🔗 المصادر: ' + Object.entries(s.all_sources).map(([name, url]) =>
+                            `<a href="${url}" target="_blank" style="color:var(--accent); text-decoration:underline; padding:2px 8px; background:rgba(0,212,255,0.08); border-radius:6px;">${name} ↗</a>`
+                        ).join('');
+                    }
 
                     panel.style.display = 'block';
                 }

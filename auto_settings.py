@@ -7,7 +7,7 @@ import os
 SETTINGS_FILE = "auto_settings.json"
 
 DEFAULT_SETTINGS = {
-    "auto_trade_enabled": True,
+    "auto_trade_enabled": False,  # Disabled by default - enable manually after deploy
     "min_confidence": 65,
     "max_open_trades": 100,
     "trade_amount": 1000,

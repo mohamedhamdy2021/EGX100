@@ -17,7 +17,7 @@ import time
 import logging
 
 from config import EGX_TOP_COMPANIES, STRATEGY_CONFIG, SERVER_CONFIG, PLATFORM_RECOMMENDATION
-from data_fetcher import get_stock_data, get_multiple_stocks_data, get_real_time_price, get_all_prices, get_market_summary, bulk_update_prices
+from data_fetcher import get_stock_data, get_multiple_stocks_data, get_real_time_price, get_all_prices, get_market_summary, bulk_update_prices, is_market_hours, INVESTING_SLUGS, GOOGLE_TICKERS
 from technical_analysis import generate_trading_signal, scan_all_stocks, get_buy_signals, get_sell_signals, SignalType
 from chart_generator import create_candlestick_chart
 from paper_trading import paper_trading
@@ -118,17 +118,26 @@ def get_chart(ticker):
     price_info = get_real_time_price(ticker)
     company = EGX_TOP_COMPANIES.get(ticker, {})
     
-    # Convert data_time to Egypt timezone display
-    egypt_time = None
-    if price_info and price_info.get('data_time'):
-        try:
-            from datetime import timezone, timedelta
-            dt = datetime.fromisoformat(str(price_info['data_time']).replace('Z', '+00:00').split('+')[0])
-            egypt_tz = timezone(timedelta(hours=2))
-            egypt_dt = dt.replace(tzinfo=timezone.utc).astimezone(egypt_tz) if dt.tzinfo is None else dt.astimezone(egypt_tz)
-            egypt_time = egypt_dt.strftime('%Y-%m-%d %H:%M:%S') + ' (توقيت مصر)'
-        except:
-            egypt_time = str(price_info.get('data_time', ''))
+    # Build source URLs
+    source_urls = {}
+    slug = INVESTING_SLUGS.get(ticker)
+    if slug:
+        source_urls["Investing.com"] = f"https://www.investing.com/equities/{slug}"
+    symbol = ticker.replace('.CA', '')
+    source_urls["Google Finance"] = f"https://www.google.com/finance/quote/{symbol}:EGX"
+    source_urls["Yahoo Finance"] = f"https://finance.yahoo.com/quote/{ticker}/"
+    
+    # Determine which URL matches the source
+    source_name = price_info.get('source', 'N/A') if price_info else 'N/A'
+    source_url = ""
+    if "Investing" in source_name and "Investing.com" in source_urls:
+        source_url = source_urls["Investing.com"]
+    elif "Google" in source_name:
+        source_url = source_urls["Google Finance"]
+    elif "Yahoo" in source_name:
+        source_url = source_urls["Yahoo Finance"]
+    
+    data_time = price_info.get('data_time', 'N/A') if price_info else 'N/A'
     
     stock_info = {
         "ticker": ticker,
@@ -142,9 +151,12 @@ def get_chart(ticker):
         "high": price_info.get('high') if price_info else None,
         "low": price_info.get('low') if price_info else None,
         "volume": price_info.get('volume', 0) if price_info else 0,
-        "source": price_info.get('source', 'N/A') if price_info else 'N/A',
-        "data_time": egypt_time or 'N/A',
-        "timestamp": datetime.now().strftime('%Y-%m-%d %H:%M:%S') + ' (توقيت مصر)',
+        "source": source_name,
+        "source_url": source_url,
+        "all_sources": source_urls,
+        "data_time": data_time + ' (توقيت مصر)' if data_time != 'N/A' else 'N/A',
+        "timestamp": price_info.get('timestamp', '') if price_info else '',
+        "market_open": is_market_hours(),
     }
     
     return jsonify({
@@ -303,13 +315,19 @@ def worker_update_prices():
 
 def worker_auto_trade():
     """Scan for signals and open trades automatically"""
-    # Initial scan after 10 seconds (let data cache warm up first)
-    time.sleep(10)
+    # Wait 30 seconds on startup to let data cache warm up
+    time.sleep(30)
     
     while True:
         try:
-            if not auto_settings.get('auto_trade_enabled', True):
+            if not auto_settings.get('auto_trade_enabled', False):
                 logger.info("Auto-trade disabled, skipping scan")
+                time.sleep(300)
+                continue
+            
+            # Only trade during EGX market hours (Sun-Thu, 10:00-14:30 Egypt time)
+            if not is_market_hours():
+                logger.info("Market closed - skipping auto-trade scan")
                 time.sleep(300)
                 continue
             
