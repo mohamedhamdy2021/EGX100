@@ -12,14 +12,12 @@
         :root {
             --bg: #0a0a1a;
             --card: #131336;
-            --card2: #1a1a4e;
             --accent: #00d4ff;
             --success: #00e676;
             --danger: #ff1744;
             --warn: #ffc107;
             --text: #eee;
-            --text2: #8892b0;
-            --glass: rgba(19, 19, 54, 0.85)
+            --text2: #8892b0
         }
 
         * {
@@ -48,7 +46,7 @@
         }
 
         .header {
-            background: var(--glass);
+            background: rgba(19, 19, 54, 0.85);
             backdrop-filter: blur(20px);
             padding: 1rem 2rem;
             position: sticky;
@@ -83,8 +81,8 @@
         .logo h1 {
             font-size: 1.4rem;
             background: linear-gradient(135deg, #00d4ff, #a855f7);
-            background-clip: text;
             -webkit-background-clip: text;
+            background-clip: text;
             -webkit-text-fill-color: transparent
         }
 
@@ -230,10 +228,6 @@
             transition: transform 0.2s
         }
 
-        .card:hover {
-            transform: translateY(-2px)
-        }
-
         .trade-card {
             border-right: 4px solid var(--success)
         }
@@ -246,7 +240,7 @@
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            margin-bottom: 0.75rem
+            margin-bottom: 0.5rem
         }
 
         .ticker {
@@ -255,7 +249,7 @@
         }
 
         .ticker-sub {
-            font-size: 0.8rem;
+            font-size: 0.78rem;
             color: var(--text2)
         }
 
@@ -284,29 +278,29 @@
         .info-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 6px;
-            font-size: 0.85rem
+            gap: 5px;
+            font-size: 0.83rem
         }
 
         .info-item {
             display: flex;
             justify-content: space-between;
-            padding: 6px 10px;
+            padding: 5px 9px;
             background: rgba(0, 0, 0, 0.25);
-            border-radius: 8px
+            border-radius: 7px
         }
 
-        .info-item .label {
+        .info-item .lbl {
             color: var(--text2)
         }
 
         .pnl-box {
             text-align: center;
-            margin-top: 0.75rem;
-            padding: 0.75rem;
+            margin-top: 0.6rem;
+            padding: 0.6rem;
             border-radius: 10px;
             font-weight: 700;
-            font-size: 1.3rem
+            font-size: 1.2rem
         }
 
         .pnl-box.positive {
@@ -331,15 +325,14 @@
         }
 
         .btn:hover {
-            opacity: 0.9;
-            transform: translateY(-1px)
+            opacity: 0.85
         }
 
         .btn-close {
             background: var(--danger);
             color: white;
             width: 100%;
-            margin-top: 0.75rem
+            margin-top: 0.6rem
         }
 
         .settings-panel {
@@ -380,8 +373,7 @@
             border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 8px;
             color: white;
-            font-family: inherit;
-            font-size: 0.95rem
+            font-family: inherit
         }
 
         .toggle-row {
@@ -460,9 +452,9 @@
         }
 
         .log-line {
-            font-size: 0.8rem;
+            font-size: 0.78rem;
             color: var(--text2);
-            padding: 4px 0;
+            padding: 3px 0;
             border-bottom: 1px solid rgba(255, 255, 255, 0.03)
         }
 
@@ -479,12 +471,13 @@
         }
 
         #activity-log {
-            max-height: 300px;
+            max-height: 250px;
             overflow-y: auto;
             background: rgba(0, 0, 0, 0.3);
             border-radius: 10px;
             padding: 10px;
-            font-family: monospace
+            font-family: 'Courier New', monospace;
+            font-size: 0.8rem
         }
 
         #chart-container {
@@ -494,6 +487,15 @@
         .last-update {
             color: var(--text2);
             font-size: 0.8rem
+        }
+
+        .trade-time {
+            font-size: 0.75rem;
+            color: var(--text2);
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 4px
         }
     </style>
 </head>
@@ -531,7 +533,7 @@
             </div>
             <div class="stat-card red">
                 <div class="stat-val" id="open-n">-</div>
-                <div class="stat-label">صفقات مفتوحة / مغلقة</div>
+                <div class="stat-label">مفتوحة / مغلقة</div>
             </div>
         </div>
 
@@ -541,7 +543,7 @@
             <div class="toggle-row">
                 <div class="toggle on" id="auto-toggle" onclick="toggleAuto()"></div>
                 <div><strong id="auto-label">التداول التلقائي مفعل</strong><br><small style="color:var(--text2)">يفتح
-                        صفقات تلقائياً حسب الإعدادات</small></div>
+                        صفقات تلقائياً حسب الإشارات</small></div>
             </div>
             <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem">
                 <div class="setting-row">
@@ -569,7 +571,7 @@
                 <span class="last-update" id="trades-time">-</span>
             </div>
             <div id="trades-grid" class="grid">
-                <div class="empty">⏳ في انتظار أول مسح للإشارات...</div>
+                <div class="empty">⏳ في انتظار أول مسح...</div>
             </div>
         </div>
 
@@ -592,14 +594,14 @@
                 <option value="">اختر سهم للتحليل...</option>
             </select>
             <div id="chart-container" class="card">
-                <div class="empty">اختر سهم من القائمة</div>
+                <div class="empty">اختر سهم</div>
             </div>
         </div>
 
         <!-- Closed Trades -->
         <div class="section">
             <div class="section-header">
-                <h2>📜 الصفقات المغلقة</h2>
+                <h2>📜 الصفقات المغلقة (<span id="closed-count">0</span>)</h2>
             </div>
             <div id="closed-grid" class="grid">
                 <div class="empty">لا توجد صفقات مغلقة</div>
@@ -608,31 +610,31 @@
 
         <!-- Reset -->
         <div class="section" style="max-width:400px">
-            <button class="btn btn-reset" onclick="resetPortfolio()">⚠️ إعادة تعيين المحفظة وحذف كل الصفقات</button>
+            <button class="btn btn-reset" onclick="doReset()">⚠️ إعادة تعيين المحفظة وحذف كل الصفقات</button>
         </div>
     </main>
 
     <script>
         const socket = io();
-        let settings = {};
+        let settings = { auto_trade_enabled: true };
+
+        // Format date for display
+        function fmtTime(isoStr) {
+            if (!isoStr) return '-';
+            const d = new Date(isoStr);
+            const day = d.toLocaleDateString('ar-EG', { day: 'numeric', month: 'short' });
+            const time = d.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
+            return day + ' ' + time;
+        }
+        function nowTime() { return new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit', second: '2-digit' }); }
 
         // === Socket Events ===
-        socket.on('connect', () => {
-            setConn(true);
-            addLog('info', '✅ تم الاتصال بالسيرفر');
-            loadAll();
-        });
+        socket.on('connect', () => { setConn(true); addLog('info', '✅ تم الاتصال'); loadAll(); });
         socket.on('disconnect', () => { setConn(false); addLog('info', '❌ انقطع الاتصال'); });
-
-        socket.on('trades_update', data => {
-            renderTrades(data.trades);
-            renderPortfolio(data.portfolio);
-            setTime();
-        });
-
+        socket.on('trades_update', data => { renderTrades(data.trades); renderPortfolio(data.portfolio); setTime(); });
         socket.on('new_trade', data => {
             const t = data.trade;
-            addLog('trade', `🟢 صفقة جديدة: ${t.arabic_name || t.ticker} @ ${t.entry_price} (${t.signal_confidence}%)`);
+            addLog('trade', '🟢 صفقة جديدة: ' + (t.arabic_name || t.ticker) + ' @ ' + t.entry_price + ' (' + t.signal_confidence + '%)');
             loadAll();
         });
 
@@ -641,27 +643,21 @@
             document.querySelector('.live-dot').style.background = ok ? 'var(--success)' : 'var(--danger)';
         }
         function setTime() {
-            const now = new Date().toLocaleTimeString('ar-EG');
-            document.getElementById('last-update').textContent = 'آخر تحديث: ' + now;
-            document.getElementById('trades-time').textContent = now;
+            const t = nowTime();
+            document.getElementById('last-update').textContent = 'آخر تحديث: ' + t;
+            document.getElementById('trades-time').textContent = t;
         }
         function addLog(type, msg) {
             const log = document.getElementById('activity-log');
-            const line = document.createElement('div');
-            line.className = 'log-line ' + type;
-            line.textContent = new Date().toLocaleTimeString('ar-EG') + ' — ' + msg;
-            log.insertBefore(line, log.firstChild);
-            if (log.children.length > 100) log.removeChild(log.lastChild);
+            const el = document.createElement('div');
+            el.className = 'log-line ' + type;
+            el.textContent = nowTime() + ' — ' + msg;
+            log.insertBefore(el, log.firstChild);
+            while (log.children.length > 80) log.removeChild(log.lastChild);
         }
 
         // === Data Loading ===
-        async function loadAll() {
-            loadSettings();
-            loadPortfolio();
-            loadTrades();
-            loadClosed();
-            loadCompanies();
-        }
+        async function loadAll() { loadSettings(); loadPortfolio(); loadTrades(); loadClosed(); loadCompanies(); }
 
         async function loadSettings() {
             try {
@@ -672,23 +668,23 @@
                 document.getElementById('max-r').value = d.max_open_trades;
                 document.getElementById('max-v').textContent = d.max_open_trades;
                 document.getElementById('amt-i').value = d.trade_amount;
-                const tog = document.getElementById('auto-toggle');
-                tog.classList.toggle('on', d.auto_trade_enabled);
+                document.getElementById('auto-toggle').classList.toggle('on', d.auto_trade_enabled);
                 document.getElementById('auto-label').textContent = d.auto_trade_enabled ? 'التداول التلقائي مفعل' : 'التداول التلقائي معطل';
-            } catch (e) { }
+            } catch (e) { console.error('loadSettings', e); }
         }
 
         async function loadPortfolio() {
             try {
                 const d = (await (await fetch('/api/trades/portfolio')).json()).portfolio;
                 renderPortfolio(d);
-            } catch (e) { }
+            } catch (e) { console.error('loadPortfolio', e); }
         }
 
         function renderPortfolio(p) {
-            document.getElementById('equity').textContent = p.total_equity.toLocaleString('ar-EG');
+            if (!p) return;
+            document.getElementById('equity').textContent = Number(p.total_equity).toLocaleString('ar-EG');
             const pnlEl = document.getElementById('pnl');
-            pnlEl.textContent = (p.total_pnl >= 0 ? '+' : '') + p.total_pnl.toLocaleString('ar-EG');
+            pnlEl.textContent = (p.total_pnl >= 0 ? '+' : '') + Number(p.total_pnl).toLocaleString('ar-EG');
             pnlEl.className = 'stat-val ' + (p.total_pnl >= 0 ? 'positive' : 'negative');
             document.getElementById('winrate').textContent = p.win_rate + '%';
             document.getElementById('open-n').textContent = p.open_trades + ' / ' + p.closed_trades;
@@ -696,31 +692,33 @@
 
         async function loadTrades() {
             try {
-                const d = (await (await fetch('/api/trades/open')).json());
+                const d = await (await fetch('/api/trades/open')).json();
                 renderTrades(d.trades);
-            } catch (e) { }
+            } catch (e) { console.error('loadTrades', e); }
         }
 
         function renderTrades(trades) {
+            if (!trades) return;
             const el = document.getElementById('trades-grid');
             document.getElementById('open-count').textContent = trades.length;
             if (!trades.length) { el.innerHTML = '<div class="empty">لا توجد صفقات مفتوحة — البوت يبحث كل 5 دقائق</div>'; return; }
             el.innerHTML = trades.map(t => `
             <div class="card trade-card ${t.pnl < 0 ? 'loss' : ''}">
                 <div class="trade-header">
-                    <div><div class="ticker">${t.arabic_name || t.ticker.replace('.CA', '')}</div><div class="ticker-sub">${t.ticker} · ${t.signal_confidence}%</div></div>
+                    <div><div class="ticker">${t.arabic_name || t.ticker.replace('.CA', '')}</div><div class="ticker-sub">${t.ticker} · قوة ${t.signal_confidence}%</div></div>
                     <span class="badge open">مفتوحة</span>
                 </div>
+                <div class="trade-time">🕐 ${fmtTime(t.entry_time)} · ${t.id}</div>
                 <div class="info-grid">
-                    <div class="info-item"><span class="label">الدخول</span><span>${t.entry_price}</span></div>
-                    <div class="info-item"><span class="label">الحالي</span><span style="font-weight:700">${t.current_price}</span></div>
-                    <div class="info-item"><span class="label">وقف الخسارة</span><span class="negative">${t.stop_loss}</span></div>
-                    <div class="info-item"><span class="label">جني الأرباح</span><span class="positive">${t.take_profit}</span></div>
-                    <div class="info-item"><span class="label">الكمية</span><span>${t.quantity}</span></div>
-                    <div class="info-item"><span class="label">المبلغ</span><span>${t.investment_amount} ج.م</span></div>
+                    <div class="info-item"><span class="lbl">سعر الدخول</span><span>${t.entry_price}</span></div>
+                    <div class="info-item"><span class="lbl">السعر الحالي</span><span style="font-weight:700">${t.current_price}</span></div>
+                    <div class="info-item"><span class="lbl">وقف الخسارة</span><span class="negative">${t.stop_loss}</span></div>
+                    <div class="info-item"><span class="lbl">جني الأرباح</span><span class="positive">${t.take_profit}</span></div>
+                    <div class="info-item"><span class="lbl">الكمية</span><span>${t.quantity}</span></div>
+                    <div class="info-item"><span class="lbl">المبلغ</span><span>${t.investment_amount} ج.م</span></div>
                 </div>
-                <div class="pnl-box ${t.pnl >= 0 ? 'positive' : 'negative'}">${t.pnl >= 0 ? '+' : ''}${t.pnl.toFixed(2)} ج.م (${t.pnl_percent}%)</div>
-                <button class="btn btn-close" onclick="closeTrade('${t.ticker}')">إغلاق يدوي</button>
+                <div class="pnl-box ${t.pnl >= 0 ? 'positive' : 'negative'}">${t.pnl >= 0 ? '+' : ''}${Number(t.pnl).toFixed(2)} ج.م (${t.pnl_percent}%)</div>
+                <button class="btn btn-close" onclick="doClose('${t.ticker}')">إغلاق يدوي</button>
             </div>
         `).join('');
             setTime();
@@ -728,8 +726,9 @@
 
         async function loadClosed() {
             try {
-                const d = (await (await fetch('/api/trades?type=closed')).json());
+                const d = await (await fetch('/api/trades?type=closed')).json();
                 const el = document.getElementById('closed-grid');
+                document.getElementById('closed-count').textContent = d.trades.length;
                 if (!d.trades.length) { el.innerHTML = '<div class="empty">لا توجد صفقات مغلقة بعد</div>'; return; }
                 el.innerHTML = d.trades.slice().reverse().slice(0, 30).map(t => `
                 <div class="card trade-card ${t.pnl < 0 ? 'loss' : ''}">
@@ -737,19 +736,20 @@
                         <div><div class="ticker">${t.arabic_name || t.ticker.replace('.CA', '')}</div><div class="ticker-sub">${t.ticker}</div></div>
                         <span class="badge ${t.pnl >= 0 ? 'profit' : 'loss'}">${t.status}</span>
                     </div>
+                    <div class="trade-time">🕐 دخول: ${fmtTime(t.entry_time)} → خروج: ${fmtTime(t.exit_time)}</div>
                     <div class="info-grid">
-                        <div class="info-item"><span class="label">الدخول</span><span>${t.entry_price}</span></div>
-                        <div class="info-item"><span class="label">الخروج</span><span>${t.exit_price}</span></div>
+                        <div class="info-item"><span class="lbl">الدخول</span><span>${t.entry_price}</span></div>
+                        <div class="info-item"><span class="lbl">الخروج</span><span>${t.exit_price}</span></div>
                     </div>
-                    <div class="pnl-box ${t.pnl >= 0 ? 'positive' : 'negative'}">${t.pnl >= 0 ? '+' : ''}${t.pnl.toFixed(2)} ج.م</div>
+                    <div class="pnl-box ${t.pnl >= 0 ? 'positive' : 'negative'}">${t.pnl >= 0 ? '+' : ''}${Number(t.pnl).toFixed(2)} ج.م (${t.pnl_percent}%)</div>
                 </div>
             `).join('');
-            } catch (e) { }
+            } catch (e) { console.error('loadClosed', e); }
         }
 
         async function loadCompanies() {
             try {
-                const d = (await (await fetch('/api/companies')).json());
+                const d = await (await fetch('/api/companies')).json();
                 const sel = document.getElementById('stock-select');
                 if (sel.children.length <= 1) {
                     sel.innerHTML = '<option value="">اختر سهم...</option>' + d.companies.map(c =>
@@ -764,50 +764,75 @@
             if (!ticker) return;
             document.getElementById('chart-container').innerHTML = '<div class="empty">⏳ جاري التحميل...</div>';
             try {
-                const d = (await (await fetch('/api/chart/' + ticker)).json());
+                const d = await (await fetch('/api/chart/' + ticker)).json();
                 if (d.chart) Plotly.newPlot('chart-container', d.chart.data, d.chart.layout, { responsive: true });
-            } catch (e) { document.getElementById('chart-container').innerHTML = '<div class="empty">خطأ</div>'; }
+            } catch (e) { document.getElementById('chart-container').innerHTML = '<div class="empty">خطأ في التحميل</div>'; }
         }
 
-        async function closeTrade(ticker) {
-            if (!confirm('إغلاق الصفقة؟')) return;
-            const d = await (await fetch('/api/trades/close/' + ticker, { method: 'POST' })).json();
-            if (d.trade) addLog('close', `🔴 تم إغلاق: ${ticker} | PnL: ${d.trade.pnl}`);
-            loadAll();
+        // === Trade Actions ===
+        async function doClose(ticker) {
+            if (!confirm('إغلاق صفقة ' + ticker.replace('.CA', '') + '؟')) return;
+            try {
+                const res = await fetch('/api/trades/close/' + encodeURIComponent(ticker), {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({})
+                });
+                const d = await res.json();
+                if (d.status === 'success') {
+                    addLog('close', '🔴 تم إغلاق: ' + ticker + ' | PnL: ' + (d.trade ? d.trade.pnl : '?'));
+                    loadAll();
+                } else {
+                    alert('خطأ: ' + (d.message || 'فشل الإغلاق'));
+                }
+            } catch (e) { alert('خطأ في الاتصال: ' + e.message); }
         }
 
+        async function doReset() {
+            if (!confirm('⚠️ سيتم حذف كل الصفقات! متأكد؟')) return;
+            if (!confirm('تأكيد نهائي - حذف كل شيء؟')) return;
+            try {
+                const res = await fetch('/api/trades/reset', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({})
+                });
+                const d = await res.json();
+                if (d.status === 'success') {
+                    addLog('info', '🗑️ تم إعادة تعيين المحفظة');
+                    loadAll();
+                } else {
+                    alert('خطأ: ' + (d.message || 'فشل'));
+                }
+            } catch (e) { alert('خطأ: ' + e.message); }
+        }
+
+        // === Settings ===
         function toggleAuto() {
             settings.auto_trade_enabled = !settings.auto_trade_enabled;
             saveSettings();
         }
 
         async function saveSettings() {
-            const body = {
-                min_confidence: parseInt(document.getElementById('conf-r').value),
-                max_open_trades: parseInt(document.getElementById('max-r').value),
-                trade_amount: parseInt(document.getElementById('amt-i').value) || 1000,
-                auto_trade_enabled: settings.auto_trade_enabled ?? true
-            };
-            const d = await (await fetch('/api/settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })).json();
-            settings = d.settings;
-            loadSettings();
-            addLog('info', `⚙️ الإعدادات: قوة>=${d.settings.min_confidence}% | أقصى=${d.settings.max_open_trades} | مبلغ=${d.settings.trade_amount}`);
+            try {
+                const body = {
+                    min_confidence: parseInt(document.getElementById('conf-r').value),
+                    max_open_trades: parseInt(document.getElementById('max-r').value),
+                    trade_amount: parseInt(document.getElementById('amt-i').value) || 1000,
+                    auto_trade_enabled: settings.auto_trade_enabled
+                };
+                const res = await fetch('/api/settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+                const d = await res.json();
+                settings = d.settings;
+                loadSettings();
+                addLog('info', '⚙️ الإعدادات: قوة≥' + d.settings.min_confidence + '% | أقصى=' + d.settings.max_open_trades + ' | مبلغ=' + d.settings.trade_amount);
+            } catch (e) { alert('خطأ: ' + e.message); }
         }
 
-        async function resetPortfolio() {
-            if (!confirm('⚠️ سيتم حذف كل الصفقات! متأكد؟')) return;
-            if (!confirm('تأكيد نهائي - حذف كل شيء؟')) return;
-            await fetch('/api/trades/reset', { method: 'POST' });
-            addLog('info', '🗑️ تم إعادة تعيين المحفظة');
-            loadAll();
-        }
-
-        // Auto-refresh every 15 seconds via WebSocket
+        // Auto-refresh
         setInterval(() => { socket.emit('get_update'); }, 15000);
-        // Full reload every 2 minutes
         setInterval(loadAll, 120000);
 
-        // Request notification permission
         if ('Notification' in window) Notification.requestPermission();
     </script>
 </body>

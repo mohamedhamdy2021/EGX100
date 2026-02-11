@@ -142,18 +142,31 @@ def open_new_trade():
 def close_trade(ticker):
     ticker = ticker.upper()
     if not ticker.endswith('.CA'): ticker += '.CA'
-    exit_price = (request.json or {}).get('exit_price') or (get_real_time_price(ticker) or {}).get('current_price')
-    trade = paper_trading.close_trade(ticker, exit_price, "MANUAL") if exit_price else None
+    # Get exit price from body or from latest data
+    body = request.get_json(silent=True) or {}
+    exit_price = body.get('exit_price')
+    if not exit_price:
+        price_info = get_real_time_price(ticker)
+        if price_info:
+            exit_price = price_info['current_price']
+        else:
+            # Fallback to current_price stored in trade
+            if ticker in paper_trading.open_trades:
+                exit_price = paper_trading.open_trades[ticker].current_price
+    if not exit_price:
+        return jsonify({"status": "error", "message": "لا يمكن الحصول على السعر"}), 400
+    trade = paper_trading.close_trade(ticker, exit_price, "MANUAL")
     if trade:
         broadcast_update()
         return jsonify({"status": "success", "trade": asdict(trade)})
-    return jsonify({"status": "error"}), 404
+    return jsonify({"status": "error", "message": "لا توجد صفقة مفتوحة"}), 404
 
 @app.route('/api/trades/reset', methods=['POST'])
 def reset_portfolio():
-    paper_trading.reset_portfolio((request.json or {}).get('initial_capital', 100000))
+    body = request.get_json(silent=True) or {}
+    paper_trading.reset_portfolio(body.get('initial_capital', 100000))
     broadcast_update()
-    return jsonify({"status": "success", "portfolio": paper_trading.get_portfolio_stats()})
+    return jsonify({"status": "success", "message": "تم إعادة التعيين", "portfolio": paper_trading.get_portfolio_stats()})
 
 # ==================== Settings API ====================
 @app.route('/api/settings')
@@ -209,10 +222,13 @@ def worker_update_prices():
                     result = paper_trading.update_trade_price(ticker, price_info['current_price'])
                     if result:
                         updated_count += 1
+                        src = price_info.get('source', 'Unknown')
                         # Check if trade was auto-closed (SL/TP hit)
                         if result.status != "مفتوحة":
                             closed_count += 1
                             logger.info(f"Trade {ticker} auto-closed: {result.status} | PnL: {result.pnl}")
+                        else:
+                            logger.debug(f"  {ticker}: {result.current_price} (src: {src})")
             
             if updated_count > 0:
                 broadcast_update()
@@ -315,12 +331,31 @@ def not_found(e): return jsonify({"status": "error", "message": "Not found"}), 4
 def server_error(e): return jsonify({"status": "error", "message": "Server error"}), 500
 
 
+# Start background workers (works both with direct run and gunicorn)
+import os as _os
+_workers_started = False
+
+def start_workers():
+    global _workers_started
+    if _workers_started:
+        return
+    _workers_started = True
+    threading.Thread(target=worker_update_prices, daemon=True, name="PriceUpdater").start()
+    threading.Thread(target=worker_auto_trade, daemon=True, name="AutoTrader").start()
+    logger.info("Background workers started")
+
+# Start workers when imported by gunicorn
+start_workers()
+
+
 if __name__ == '__main__':
+    port = int(_os.environ.get('PORT', SERVER_CONFIG["port"]))
+    
     print(f"""
     ╔═══════════════════════════════════════════════════════════════════╗
     ║           EGX100 Auto Trading Bot 📈🤖                            ║
     ║                                                                   ║
-    ║   🌐 http://localhost:5000                                        ║
+    ║   🌐 http://localhost:{port}                                        ║
     ║   ⚙️  Min Confidence: {auto_settings['min_confidence']}%                                    ║
     ║   📊 Max Trades: {auto_settings['max_open_trades']}                                         ║
     ║   💰 Per Trade: {auto_settings['trade_amount']} EGP                                       ║
@@ -332,8 +367,4 @@ if __name__ == '__main__':
     ╚═══════════════════════════════════════════════════════════════════╝
     """)
     
-    # Start background workers
-    threading.Thread(target=worker_update_prices, daemon=True, name="PriceUpdater").start()
-    threading.Thread(target=worker_auto_trade, daemon=True, name="AutoTrader").start()
-    
-    socketio.run(app, host=SERVER_CONFIG["host"], port=SERVER_CONFIG["port"], debug=False)
+    socketio.run(app, host="0.0.0.0", port=port, debug=False)
