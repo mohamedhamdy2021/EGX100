@@ -29,7 +29,17 @@ logger = logging.getLogger(__name__)
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'egx-trading-bot-2024'
 CORS(app)
-socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
+
+# Auto-detect async mode: gevent for production (Railway), threading for local dev
+import os as _os
+_async_mode = 'gevent' if _os.environ.get('PORT') or _os.environ.get('RAILWAY_ENVIRONMENT') else 'threading'
+try:
+    import gevent
+    _async_mode = 'gevent'
+except ImportError:
+    _async_mode = 'threading'
+logger.info(f"SocketIO async_mode: {_async_mode}")
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode=_async_mode)
 
 # Track last scan results for the UI
 last_scan_results = {"signals": [], "timestamp": None}
